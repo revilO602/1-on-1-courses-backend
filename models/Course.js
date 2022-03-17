@@ -5,13 +5,16 @@ const {CourseCategory} = require("./CourseCategory");
 
 const Course = db.define('course', {
   name: {
-    type: Sequelize.STRING
+    type: Sequelize.STRING,
+    allowNull: false
   },
   description: {
-    type: Sequelize.STRING
+    type: Sequelize.STRING,
+    allowNull: false
   },
   teacher_id: {
     type: Sequelize.INTEGER,
+    allowNull: false,
     references: {
       // This is a reference to another model
       model: User,
@@ -21,6 +24,7 @@ const Course = db.define('course', {
   },
   category_id: {
     type: Sequelize.INTEGER,
+    allowNull: false,
     references: {
       // This is a reference to another model
       model: CourseCategory,

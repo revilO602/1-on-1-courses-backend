@@ -1,7 +1,6 @@
 // LIBRARY IMPORTS
 const express = require('express'); //middleware framework
 const os = require('os'); // used to extract out-facing IP from OS
-const basicAuth = require('express-basic-auth') // authorization middleware
 
 // OWN IMPORTS
 const {testDb} = require('./database/init');
@@ -14,7 +13,7 @@ const port = 3000;
 // MIDDLEWARE
 server.use(express.json());
 server.use(express.urlencoded({ extended: false }));
-const auth = basicAuth( { authorizer: credentialsAuthorizer, authorizeAsync: true })
+
 
 const networkInterfaces = os.networkInterfaces();
 
@@ -35,3 +34,6 @@ createTables()
 // routing
 const userRouter = require('./routes/users')
 server.use('/users', userRouter)
+
+const courseRouter = require('./routes/courses')
+server.use('/courses', courseRouter)

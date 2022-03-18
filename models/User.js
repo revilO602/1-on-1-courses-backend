@@ -13,6 +13,7 @@ const User = db.define('user', {
   email: {
     type: Sequelize.STRING,
     allowNull: false,
+    unique: true,
     validate: {
       isEmail: true,
     }
@@ -21,7 +22,7 @@ const User = db.define('user', {
     type: Sequelize.STRING,
     allowNull: false,
   },
-})
+}, {underscored: true})
 
 module.exports = {
   User: User,

@@ -7,7 +7,8 @@ const CourseMaterial = db.define('course_material', {
     type: Sequelize.STRING
   },
   filePath: {
-    type: Sequelize.STRING
+    type: Sequelize.STRING,
+    unique: true,
   },
   course_id: {
     type: Sequelize.INTEGER,
@@ -18,7 +19,7 @@ const CourseMaterial = db.define('course_material', {
       key: 'id',
     },
   }
-})
+}, {underscored: true})
 
 module.exports = {
   CourseMaterial: CourseMaterial,

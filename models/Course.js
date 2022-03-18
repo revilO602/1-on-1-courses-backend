@@ -2,6 +2,7 @@ const Sequelize = require('sequelize');
 const {db} = require('../database/init');
 const {User} = require("./User");
 const {CourseCategory} = require("./CourseCategory");
+const {Timeslot} = require("./Timeslot");
 
 const Course = db.define('course', {
   name: {
@@ -32,7 +33,10 @@ const Course = db.define('course', {
       key: 'id',
     }
   }
-})
+}, {underscored: true})
+
+Course.hasMany(Timeslot)
+Timeslot.belongsTo(Course)
 
 module.exports = {
   Course: Course,

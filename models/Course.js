@@ -26,7 +26,7 @@ Course.belongsTo(User, {
   }
 })
 User.hasMany(Course, {
-  as: 'teacher',
+  as: 'courses',
   foreignKey: {
     name: 'teacherId',
     allowNull: false
@@ -42,7 +42,7 @@ Course.belongsTo(CourseCategory, {
 })
 
 CourseCategory.hasMany(Course, {
-  as: 'category',
+  as: 'courses',
   foreignKey: {
     name: 'categoryId',
     allowNull: false

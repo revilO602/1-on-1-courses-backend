@@ -5,8 +5,6 @@ const os = require('os'); // used to extract out-facing IP from OS
 // OWN IMPORTS
 const {testDb} = require('./database/init');
 const {createTables} = require('./database/construct');
-const {credentialsAuthorizer} = require("./middleware/authorization");
-
 
 const server = express();
 const port = 3000;

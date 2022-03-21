@@ -1,7 +1,6 @@
 const Sequelize = require('sequelize');
 const {db} = require('../database/init');
 const {User} = require("./User");
-const {Course} = require("./Course");
 
 const Timeslot = db.define('timeslots', {
   weekDay: {
@@ -25,7 +24,7 @@ Timeslot.belongsTo(User, {
 })
 
 User.hasMany(Timeslot, {
-  as: 'student',
+  as: 'timeslots',
   foreignKey: {
     name: 'studentId',
   }

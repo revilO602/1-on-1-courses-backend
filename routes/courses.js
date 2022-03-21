@@ -1,4 +1,5 @@
 const express = require('express')
+const multer  = require('multer')
 const {User} = require("../models/User");
 const {Timeslot} = require("../models/Timeslot");
 const {Course} = require("../models/Course");
@@ -6,7 +7,21 @@ const router = express.Router()
 const {auth} = require("../middleware/authorization")
 const {CourseCategory} = require("../models/CourseCategory");
 const extractUser = require("../middleware/extractUser");
-const { Op, where} = require('sequelize');
+const { Op } = require('sequelize');
+const path = require("path");
+const {CourseMaterial} = require("../models/CourseMaterial");
+
+
+const storage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    cb(null, 'media/');
+  },
+  filename: function(req, file, cb) {
+    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+  }
+});
+
+var upload = multer({ storage: storage })
 
 router.use(auth)
 
@@ -19,6 +34,41 @@ router.get('/categories', function (req, res) {
         err.message || "Some error occurred while creating course."
     });
   }).then(data => res.status(200).send(data));
+})
+
+//MATERIALS
+router.post('/:id/materials', upload.single('material'), async function (req, res) {
+  try{
+    let courseObj = await Course.findByPk(req.params.id)
+    if (courseObj){
+      await CourseMaterial.create({filePath: req.file.filename, name: req.body.name, courseId: courseObj.id})
+      res.status(201).send()
+    } else {
+      res.status(404).send({message: 'Course with given ID does not exist'})
+    }
+  } catch (e){
+    res.status(400).send({
+      message:
+        e.message || "Some error occurred while creating course."
+    });
+  }
+})
+
+router.get('/:id/materials', async function (req, res) {
+  try{
+    let courseObj = await Course.findByPk(req.params.id, {include:
+        {model: CourseMaterial, as: 'materials', attributes: ['id', 'name']}})
+    if (courseObj){
+      res.status(201).send(courseObj.materials)
+    } else {
+      res.status(404).send({message: 'Course with given ID does not exist'})
+    }
+  } catch (e){
+    res.status(400).send({
+      message:
+        e.message || "Some error occurred while creating course."
+    });
+  }
 })
 
 router.get('/:id', async function (req, res) {

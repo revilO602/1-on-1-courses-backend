@@ -1,25 +1,18 @@
 const Sequelize = require('sequelize');
 const {db} = require('../database/init');
 const {Course} = require("./Course");
-const {User} = require("./User");
 
 const CourseMaterial = db.define('course_material', {
   name: {
-    type: Sequelize.STRING
+    type: Sequelize.STRING,
+    allowNull: false
   },
   filePath: {
     type: Sequelize.STRING,
     unique: true,
+    allowNull: false
   },
-  course_id: {
-    type: Sequelize.INTEGER,
-    references: {
-      // This is a reference to another model
-      model: Course,
-      // This is the column name of the referenced model
-      key: 'id',
-    },
-  }
+
 }, {underscored: true})
 
 CourseMaterial.belongsTo(Course, {
@@ -30,7 +23,7 @@ CourseMaterial.belongsTo(Course, {
   }
 })
 Course.hasMany(CourseMaterial, {
-  as: 'course',
+  as: 'materials',
   foreignKey: {
     name: 'courseId',
     allowNull: false

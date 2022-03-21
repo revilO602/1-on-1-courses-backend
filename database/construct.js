@@ -2,8 +2,6 @@ const {db} = require('./init')
 const {Course} = require('../models/Course')
 const {User} = require('../models/User')
 const {CourseCategory} = require('../models/CourseCategory')
-const {CourseMaterial} = require('../models/CourseMaterial')
-const {Timeslot} = require('../models/Timeslot')
 
 async function createCourseCategories(){
     await CourseCategory.create({name: 'Music'});
@@ -30,6 +28,25 @@ async function createUsers(){
     });
 }
 
+async function createCourses(){
+    await Course.create({
+        name: "e course",
+        description: "hell ye",
+        categoryId: 1,
+        teacherId: 1,
+        timeslots: [
+            {
+                weekDay: "Monday",
+                startTime: "20:56"
+            },
+            {
+                weekDay: "Monday",
+                startTime: "14:56"
+            }
+        ]
+    })
+}
+
 async function createTables(){
     await db.sync({ force: true });
     console.log('DATABASE RESET')
@@ -37,6 +54,8 @@ async function createTables(){
     await createCourseCategories()
     console.log("Creating users");
     await createUsers()
+    console.log("Creating courses");
+    await createCourses()
 }
 
 module.exports = {

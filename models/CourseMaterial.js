@@ -1,6 +1,7 @@
 const Sequelize = require('sequelize');
 const {db} = require('../database/init');
 const {Course} = require("./Course");
+const {User} = require("./User");
 
 const CourseMaterial = db.define('course_material', {
   name: {
@@ -20,6 +21,21 @@ const CourseMaterial = db.define('course_material', {
     },
   }
 }, {underscored: true})
+
+CourseMaterial.belongsTo(Course, {
+  as: 'course',
+  foreignKey: {
+    name: 'courseId',
+    allowNull: false
+  }
+})
+Course.hasMany(CourseMaterial, {
+  as: 'course',
+  foreignKey: {
+    name: 'courseId',
+    allowNull: false
+  }
+})
 
 module.exports = {
   CourseMaterial: CourseMaterial,

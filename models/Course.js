@@ -13,30 +13,41 @@ const Course = db.define('course', {
     type: Sequelize.STRING,
     allowNull: false
   },
-  teacher_id: {
-    type: Sequelize.INTEGER,
-    allowNull: false,
-    references: {
-      // This is a reference to another model
-      model: User,
-      // This is the column name of the referenced model
-      key: 'id',
-    }
-  },
-  category_id: {
-    type: Sequelize.INTEGER,
-    allowNull: false,
-    references: {
-      // This is a reference to another model
-      model: CourseCategory,
-      // This is the column name of the referenced model
-      key: 'id',
-    }
-  }
 }, {underscored: true})
 
 Course.hasMany(Timeslot)
 Timeslot.belongsTo(Course)
+
+Course.belongsTo(User, {
+  as: 'teacher',
+  foreignKey: {
+    name: 'teacherId',
+    allowNull: false
+  }
+})
+User.hasMany(Course, {
+  as: 'teacher',
+  foreignKey: {
+    name: 'teacherId',
+    allowNull: false
+  }
+})
+
+Course.belongsTo(CourseCategory, {
+  as: 'category',
+  foreignKey: {
+    name: 'categoryId',
+    allowNull: false
+  }
+})
+
+CourseCategory.hasMany(Course, {
+  as: 'category',
+  foreignKey: {
+    name: 'categoryId',
+    allowNull: false
+  }
+})
 
 module.exports = {
   Course: Course,

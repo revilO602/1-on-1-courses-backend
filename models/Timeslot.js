@@ -15,25 +15,21 @@ const Timeslot = db.define('timeslots', {
     type: Sequelize.TIME,
     allowNull: false
   },
-  student_id: {
-    type: Sequelize.INTEGER,
-    references: {
-      // This is a reference to another model
-      model: User,
-      // This is the column name of the referenced model
-      key: 'id',
-    },
-  },
-  // course_id: {
-  //   type: Sequelize.INTEGER,
-  //   references: {
-  //     // This is a reference to another model
-  //     model: Course,
-  //     // This is the column name of the referenced model
-  //     key: 'id',
-  //   },
-  // }
 }, {underscored: true})
+
+Timeslot.belongsTo(User, {
+  as: 'student',
+  foreignKey: {
+    name: 'studentId',
+  }
+})
+
+User.hasMany(Timeslot, {
+  as: 'student',
+  foreignKey: {
+    name: 'studentId',
+  }
+})
 
 module.exports = {
   Timeslot: Timeslot,

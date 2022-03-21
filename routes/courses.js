@@ -11,7 +11,6 @@ const { Op } = require('sequelize');
 const path = require("path");
 const {CourseMaterial} = require("../models/CourseMaterial");
 
-
 const storage = multer.diskStorage({
   destination: function(req, file, cb) {
     cb(null, 'media/');
@@ -37,6 +36,24 @@ router.get('/categories', function (req, res) {
 })
 
 //MATERIALS
+router.get('/:courseId/materials/:materialId', async function (req, res) {
+  try{
+    let courseObj = await Course.findByPk(req.params.courseId, {include:
+        {model: CourseMaterial, as: 'materials', where: {id: req.params.materialId}, attributes: ['id', 'filePath']}})
+    if (courseObj && courseObj.materials.length > 0){
+      res.sendFile(path.join(__dirname, '..', 'media', courseObj.materials[0].filePath))
+    } else {
+      res.status(404).send({message: 'Not found'})
+    }
+  } catch (e){
+    res.status(400).send({
+      message:
+        e.message || "Some error occurred while creating course."
+    });
+  }
+
+})
+
 router.post('/:id/materials', upload.single('material'), async function (req, res) {
   try{
     let courseObj = await Course.findByPk(req.params.id)
@@ -70,6 +87,8 @@ router.get('/:id/materials', async function (req, res) {
     });
   }
 })
+
+
 
 router.get('/:id', async function (req, res) {
   try{

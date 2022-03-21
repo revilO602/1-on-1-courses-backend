@@ -23,7 +23,7 @@ server.listen(port, () => {
 
 
 server.get('/', function (req, res) {
-  res.send({res: "Hello World"})
+  res.status(418).send("Hello World")
 })
 
 testDb();

@@ -1,5 +1,5 @@
 const express = require('express')
-const multer  = require('multer')
+const multer  = require('multer') // file upload middleware
 const {User} = require("../models/User");
 const {Timeslot} = require("../models/Timeslot");
 const {Course} = require("../models/Course");
@@ -11,6 +11,7 @@ const { Op } = require('sequelize');
 const path = require("path");
 const {CourseMaterial} = require("../models/CourseMaterial");
 
+// setup upload middleware
 const storage = multer.diskStorage({
   destination: function(req, file, cb) {
     cb(null, 'media/');
@@ -19,10 +20,9 @@ const storage = multer.diskStorage({
     cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
   }
 });
+const upload = multer({ storage: storage })
 
-var upload = multer({ storage: storage })
-
-router.use(auth)
+router.use(auth) // use auth for every route
 
 // list categories
 router.get('/categories', function (req, res) {
@@ -36,6 +36,7 @@ router.get('/categories', function (req, res) {
 })
 
 //MATERIALS
+//download material
 router.get('/:courseId/materials/:materialId', async function (req, res) {
   try{
     let courseObj = await Course.findByPk(req.params.courseId, {include:
@@ -51,12 +52,11 @@ router.get('/:courseId/materials/:materialId', async function (req, res) {
         e.message || "Some error occurred while creating course."
     });
   }
-
 })
-
-router.post('/:id/materials', upload.single('material'), async function (req, res) {
+//upload material to course
+router.post('/:courseId/materials', upload.single('material'), async function (req, res) {
   try{
-    let courseObj = await Course.findByPk(req.params.id)
+    let courseObj = await Course.findByPk(req.params.courseId)
     if (courseObj){
       await CourseMaterial.create({filePath: req.file.filename, name: req.body.name, courseId: courseObj.id})
       res.status(201).send()
@@ -70,10 +70,10 @@ router.post('/:id/materials', upload.single('material'), async function (req, re
     });
   }
 })
-
-router.get('/:id/materials', async function (req, res) {
+// list materials for course
+router.get('/:courseId/materials', async function (req, res) {
   try{
-    let courseObj = await Course.findByPk(req.params.id, {include:
+    let courseObj = await Course.findByPk(req.params.courseId, {include:
         {model: CourseMaterial, as: 'materials', attributes: ['id', 'name']}})
     if (courseObj){
       res.status(201).send(courseObj.materials)
@@ -88,15 +88,15 @@ router.get('/:id/materials', async function (req, res) {
   }
 })
 
-
-
-router.get('/:id', async function (req, res) {
+//COURSES
+//get course detail
+router.get('/:courseId', async function (req, res) {
   try{
-    let courseObj = await Course.findByPk(req.params.id, {include: [
+    let courseObj = await Course.findByPk(req.params.courseId, {include: [
         {model: User, as: 'teacher', attributes: ['firstName', 'lastName']},
         {model: CourseCategory, as: 'category', attributes: ['name']},
         {model: Timeslot, attributes: ['id', 'weekDay', 'startTime'],
-          where: { studentId: {[Op.is]: null }}
+          where: { studentId: {[Op.is]: null }} // return only free timeslots
         }
       ]})
     if (courseObj){
@@ -112,7 +112,8 @@ router.get('/:id', async function (req, res) {
   }
 })
 
-router.post('/:id', function (req, res) {
+// join course - Work in progress
+router.post('/:courseId/join', function (req, res) {
     Course.create(req.body).catch(err => {
       res.status(400).send({
         message:
@@ -121,7 +122,7 @@ router.post('/:id', function (req, res) {
     }).then(data => res.status(201).send(data));
 })
 
-// Work in progress
+// WIP
 router.put('/:id', extractUser, async function (req, res) {
   try{
     let courseObj = await Course.findByPk(req.params.id)
@@ -140,6 +141,7 @@ router.put('/:id', extractUser, async function (req, res) {
   }
 })
 
+// list courses
 router.get('/', async function (req, res) {
   const options = {where:{}, order: [['name', 'ASC']], include: [
       {model: User, as: 'teacher', attributes: ['firstName', 'lastName']},

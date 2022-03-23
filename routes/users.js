@@ -1,7 +1,9 @@
 const express = require('express')
 const {User} = require("../models/User");
 const router = express.Router()
+const {auth} = require("../middleware/authorization") // authentication middleware
 
+// register new user
 router.post('/register', function (req, res) {
   User.create(req.body).catch(err => {
     res.status(400).send({
@@ -9,10 +11,12 @@ router.post('/register', function (req, res) {
         err.message || "Some error occurred while creating user."
     });
   }).then(data => res.status(201).send(data));
-
 })
 
-router.post('/login', function (req, res) {
+// user can check if his credentials are correct
+// this will return 401 if wrong credentials in auth header
+// used when the mobile app wants to save credentials or throw login error
+router.post('/login', auth, function (req, res) {
   res.status(200).send('You passed')
 })
 

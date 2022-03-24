@@ -7,25 +7,6 @@ const maximumBeforeWeekOverlap = convertToMinutes({
 })
 const weekEnd = maximumBeforeWeekOverlap + 60
 
-const timeslots = [
-  {
-    weekDay : 'Monday',
-    startTime : '14:56'
-  },
-  {
-    weekDay : 'Monday',
-    startTime : '15:00'
-  },
-  {
-    weekDay : 'Sunday',
-    startTime : '23:57'
-  },
-  {
-    weekDay : 'Monday',
-    startTime : '00:20'
-  },
-]
-
 function convertToMinutes(timeslot){
   const timeParts = timeslot.startTime.split(":");
   return (parseInt(timeParts[0],10) * 60) + parseInt(timeParts[1],10) + (days.indexOf(timeslot.weekDay) * 24*60);
@@ -45,9 +26,12 @@ function areCollisions(timeslots){
     for (let j=i+1; j < timeslots.length; j++){
       let converted = [convertToMinutes(timeslots[i]), convertToMinutes(timeslots[j])]
       let sorted = ( converted[0] < converted[1]) ? [converted[0], converted[1]] : [converted[1], converted[0]]
-      console.log(isOverlap(sorted[0],sorted[1]))
+      if (isOverlap(sorted[0],sorted[1])){
+        return true
+      }
     }
   }
+  return false
 }
 
-areCollisions(timeslots)
+module.exports = areCollisions

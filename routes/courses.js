@@ -10,6 +10,8 @@ const extractUser = require("../middleware/extractUser");
 const { Op } = require('sequelize');
 const path = require("path");
 const {CourseMaterial} = require("../models/CourseMaterial");
+const isCollision = require("../helpers/timeslotChecker")
+const getTimeslots = require("../helpers/timeslotGetter")
 
 // setup upload middleware
 const storage = multer.diskStorage({
@@ -25,14 +27,41 @@ const upload = multer({ storage: storage })
 router.use(auth) // use auth for every route
 
 // list categories
-router.get('/categories', function (req, res) {
-  CourseCategory.findAll({attributes: ['id', 'name'], order: [['name', 'ASC']]}).catch(err => {
-    console.log(err)
+router.get('/categories', async function (req, res) {
+  try {
+    let categories = await CourseCategory.findAll({attributes: ['id', 'name'], order: [['name', 'ASC']]})
+    res.status(200).send(categories)
+  } catch (err){
     res.status(404).send({
       message:
         err.message || "Some error occurred while creating course."
     });
-  }).then(data => res.status(200).send(data));
+  }
+})
+
+// join course through timeslot id
+router.get('/join/:timeslotId', extractUser, async function (req, res) {
+  try {
+    let timeslotObj = await Timeslot.findByPk(req.params.timeslotId, {include: [
+        {model: Course, as: 'course', attributes: ['teacherId']},
+      ]})
+    if (!timeslotObj){
+      res.status(404).send({message: 'Timeslot with given ID does not exist'})
+    } else if (timeslotObj.course.teacherId === req.user.id){
+      res.status(400).send({message: 'Can not join your own course'})
+    } else if (timeslotObj.studentId !== null){
+      res.status(400).send({message: 'Timeslot already taken'})
+    } else {
+      timeslotObj.studentId = req.user.id
+      await timeslotObj.save()
+      res.status(200).send()
+    }
+  } catch (err){
+    res.status(400).send({
+      message:
+        err.message || "Some error occurred while creating course."
+    });
+  }
 })
 
 //MATERIALS
@@ -53,6 +82,7 @@ router.get('/:courseId/materials/:materialId', async function (req, res) {
     });
   }
 })
+
 //upload material to course
 router.post('/:courseId/materials', upload.single('material'), async function (req, res) {
   try{
@@ -112,20 +142,10 @@ router.get('/:courseId', async function (req, res) {
   }
 })
 
-// join course - Work in progress
-router.post('/:courseId/join', function (req, res) {
-    Course.create(req.body).catch(err => {
-      res.status(400).send({
-        message:
-          err.message || "Some error occurred while creating course."
-      });
-    }).then(data => res.status(201).send(data));
-})
-
 // WIP
-router.put('/:id', extractUser, async function (req, res) {
+router.put('/:courseId', extractUser, async function (req, res) {
   try{
-    let courseObj = await Course.findByPk(req.params.id)
+    let courseObj = await Course.findByPk(req.params.courseId)
     if (!courseObj){
       res.status(404).send({message: 'Course with given ID does not exist'})
     } else if (courseObj.teacherId !== req.user.id) {
@@ -166,6 +186,7 @@ router.get('/', async function (req, res) {
 router.post('/', extractUser, async function (req, res) {
   const timeslots = req.body["timeslots"]
   let buildTimeslots = []
+  let userTimeslots = await getTimeslots(req.user)
   if (!Array.isArray(timeslots) || !timeslots.length){
     res.status(400).send({message: "Missing the timeslots array"})
   }
@@ -173,6 +194,11 @@ router.post('/', extractUser, async function (req, res) {
     for (const timeslot of timeslots) {
       let timeslotObj = await Timeslot.build(timeslot)
       buildTimeslots.push(timeslotObj)
+    }
+    // check if timeslots overlap
+    if (isCollision([...buildTimeslots,...userTimeslots])){
+      res.status(400).send({message: "Some of your timeslots overlap!"});
+      return
     }
     const course = await Course.create({...req.body, teacherId: req.user.id})
     for (const timeslot of buildTimeslots) {

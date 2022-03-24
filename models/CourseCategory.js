@@ -4,7 +4,8 @@ const {db} = require('../database/init');
 const CourseCategory = db.define('course_category', {
   name: {
     type: Sequelize.STRING,
-    allowNull: false
+    allowNull: false,
+    unique:true
   },
 }, {underscored: true})
 

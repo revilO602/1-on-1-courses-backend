@@ -35,3 +35,12 @@ server.use('/users', userRouter)
 
 const courseRouter = require('./routes/courses')
 server.use('/courses', courseRouter)
+
+const studentRouter = require('./routes/student')
+server.use('/student', studentRouter)
+
+const teacherRouter = require('./routes/teacher')
+server.use('/teacher', teacherRouter)
+
+const timetableRouter = require('./routes/timetable')
+server.use('/timetable', timetableRouter)

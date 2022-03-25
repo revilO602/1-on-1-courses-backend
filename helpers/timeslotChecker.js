@@ -13,7 +13,6 @@ function convertToMinutes(timeslot){
 }
 
 function isOverlap(start1, start2){
-  console.log(start1 + ' ' + start2)
   if(start2 > maximumBeforeWeekOverlap){
     let end2 = start2 + 60 - weekEnd
     return (start1 < end2)
@@ -21,17 +20,18 @@ function isOverlap(start1, start2){
   return ( (start1+60) > start2 )
 }
 
-function areCollisions(timeslots){
+function getOverlappingTimeslots(timeslots){
+  let overlappingTimeslots = []
   for (let i=0; i < timeslots.length-1; i++){
     for (let j=i+1; j < timeslots.length; j++){
       let converted = [convertToMinutes(timeslots[i]), convertToMinutes(timeslots[j])]
       let sorted = ( converted[0] < converted[1]) ? [converted[0], converted[1]] : [converted[1], converted[0]]
       if (isOverlap(sorted[0],sorted[1])){
-        return true
+        overlappingTimeslots.push([timeslots[i], timeslots[j]])
       }
     }
   }
-  return false
+  return overlappingTimeslots
 }
 
-module.exports = areCollisions
+module.exports = getOverlappingTimeslots

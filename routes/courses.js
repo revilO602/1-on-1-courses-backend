@@ -10,8 +10,9 @@ const extractUser = require("../middleware/extractUser");
 const { Op } = require('sequelize');
 const path = require("path");
 const {CourseMaterial} = require("../models/CourseMaterial");
-const isCollision = require("../helpers/timeslotChecker")
+const getOverlappingTimeslots = require("../helpers/timeslotChecker")
 const getTimeslots = require("../helpers/timeslotGetter")
+const handleError = require("../helpers/errorHandler")
 
 // setup upload middleware
 const storage = multer.diskStorage({
@@ -32,10 +33,7 @@ router.get('/categories', async function (req, res) {
     let categories = await CourseCategory.findAll({attributes: ['id', 'name'], order: [['name', 'ASC']]})
     res.status(200).send(categories)
   } catch (err){
-    res.status(404).send({
-      message:
-        err.message || "Some error occurred while creating course."
-    });
+    handleError(err, res)
   }
 })
 
@@ -57,10 +55,7 @@ router.get('/join/:timeslotId', extractUser, async function (req, res) {
       res.status(200).send()
     }
   } catch (err){
-    res.status(400).send({
-      message:
-        err.message || "Some error occurred while creating course."
-    });
+    handleError(err, res)
   }
 })
 
@@ -75,11 +70,8 @@ router.get('/:courseId/materials/:materialId', async function (req, res) {
     } else {
       res.status(404).send({message: 'Not found'})
     }
-  } catch (e){
-    res.status(400).send({
-      message:
-        e.message || "Some error occurred while creating course."
-    });
+  } catch (err){
+    handleError(err, res)
   }
 })
 
@@ -93,11 +85,8 @@ router.post('/:courseId/materials', upload.single('material'), async function (r
     } else {
       res.status(404).send({message: 'Course with given ID does not exist'})
     }
-  } catch (e){
-    res.status(400).send({
-      message:
-        e.message || "Some error occurred while creating course."
-    });
+  } catch (err){
+    handleError(err, res)
   }
 })
 // list materials for course
@@ -110,11 +99,8 @@ router.get('/:courseId/materials', async function (req, res) {
     } else {
       res.status(404).send({message: 'Course with given ID does not exist'})
     }
-  } catch (e){
-    res.status(400).send({
-      message:
-        e.message || "Some error occurred while creating course."
-    });
+  } catch (err){
+    handleError(err, res)
   }
 })
 
@@ -134,15 +120,12 @@ router.get('/:courseId', async function (req, res) {
     } else {
       res.status(404).send({message: 'Course with given ID does not exist'})
     }
-  } catch (e){
-    res.status(400).send({
-      message:
-        e.message || "Some error occurred while creating course."
-    });
+  } catch (err){
+    handleError(err, res)
   }
 })
 
-// WIP
+// update course
 router.put('/:courseId', extractUser, async function (req, res) {
   try{
     let courseObj = await Course.findByPk(req.params.courseId)
@@ -151,13 +134,27 @@ router.put('/:courseId', extractUser, async function (req, res) {
     } else if (courseObj.teacherId !== req.user.id) {
       res.status(401).send({message: 'You are not the teacher of this course'})
     } else {
-      courseObj.update(req.body)
+      await Course.build(req.body) // validate if everything in request body
+      await courseObj.update(req.body)
     }
-  } catch (e){
-    res.status(400).send({
-      message:
-        e.message || "Some error occurred while creating course."
-    });
+  } catch (err){
+    handleError(err, res)
+  }
+})
+
+// delete course
+router.delete('/:courseId', extractUser, async function (req, res) {
+  try{
+    let courseObj = await Course.findByPk(req.params.courseId)
+    if (!courseObj){
+      res.status(404).send({message: 'Course with given ID does not exist'})
+    } else if (courseObj.teacherId !== req.user.id) {
+      res.status(401).send({message: 'You are not the teacher of this course'})
+    } else {
+      await courseObj.destroy()
+    }
+  } catch (err){
+    handleError(err, res)
   }
 })
 
@@ -193,11 +190,14 @@ router.post('/', extractUser, async function (req, res) {
   try{
     for (const timeslot of timeslots) {
       let timeslotObj = await Timeslot.build(timeslot)
+      await timeslotObj.validate()
       buildTimeslots.push(timeslotObj)
     }
     // check if timeslots overlap
-    if (isCollision([...buildTimeslots,...userTimeslots])){
-      res.status(400).send({message: "Some of your timeslots overlap!"});
+    let overlappingTimeslots = getOverlappingTimeslots([...buildTimeslots,...userTimeslots])
+    if (overlappingTimeslots.length > 0){
+      res.status(400).send({message: "Some of your timeslots overlap!",
+        overlappingTimeslots: overlappingTimeslots});
       return
     }
     const course = await Course.create({...req.body, teacherId: req.user.id})
@@ -207,10 +207,7 @@ router.post('/', extractUser, async function (req, res) {
     }
     res.status(201).send()
   } catch (err){
-    res.status(400).send({
-      message:
-        err.message || "Some error occurred while creating course."
-    });
+    handleError(err, res)
   }
 })
 

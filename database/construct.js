@@ -15,36 +15,35 @@ async function createCourseCategories(){
 
 async function createUsers(){
     await User.create({
-        email: "login@login.sk",
-        password: "login",
-        firstName: "Oliver",
+        email: "teacher1@login.sk",
+        password: "heslo",
+        firstName: "Teacher1",
         lastName: "Leontiev"
     });
     await User.create({
-        email: "login2@login.sk",
-        password: "login2",
-        firstName: "Oliver2",
+        email: "teacher2@login.sk",
+        password: "heslo",
+        firstName: "Teacher2",
         lastName: "Leontiev"
     });
-}
-
-async function createCourses(){
-    await Course.create({
-        name: "e course",
-        description: "hell ye",
-        categoryId: 1,
-        teacherId: 1,
-        timeslots: [
-            {
-                weekDay: "Monday",
-                startTime: "20:56"
-            },
-            {
-                weekDay: "Monday",
-                startTime: "14:56"
-            }
-        ]
-    })
+    await User.create({
+        email: "student1@login.sk",
+        password: "heslo",
+        firstName: "Student1",
+        lastName: "Leontiev"
+    });
+    await User.create({
+        email: "student2@login.sk",
+        password: "heslo",
+        firstName: "Student2",
+        lastName: "Leontiev"
+    });
+    await User.create({
+        email: "student3@login.sk",
+        password: "heslo",
+        firstName: "Student3",
+        lastName: "Leontiev"
+    });
 }
 
 async function createTables(){
@@ -54,8 +53,6 @@ async function createTables(){
     await createCourseCategories()
     console.log("Creating users");
     await createUsers()
-    console.log("Creating courses");
-    await createCourses()
 }
 
 module.exports = {

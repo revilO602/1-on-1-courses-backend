@@ -3,7 +3,8 @@ const {Timeslot} = require("../models/Timeslot");
 const {Course} = require("../models/Course");
 
 async function getTimeslots(user){
-  let timeslots = await Timeslot.findAll({where: {studentId: user.id}}) // student timeslots
+  let timeslots = await Timeslot.findAll({attributes: ['weekDay', 'startTime'],
+    where: {studentId: user.id}}) // student timeslots
   let teacherCourses = await Course.findAll({where:{teacherId: user.id},
     include:{model: Timeslot, attributes: ['weekDay', 'startTime']}})
   for (course of teacherCourses){

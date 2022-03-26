@@ -38,66 +38,143 @@ router.get('/categories', async function (req, res) {
 })
 
 // join course through timeslot id
-router.get('/join/:timeslotId', extractUser, async function (req, res) {
+router.post('/join', extractUser, async function (req, res) {
+  const timeslotsArr = req.body["timeslots"]
+  let timeslots = []
+  if (!Array.isArray(timeslotsArr) || !timeslotsArr.length){
+    res.status(400).send({message: "Missing the timeslots array"})
+  }
   try {
-    let timeslotObj = await Timeslot.findByPk(req.params.timeslotId, {include: [
-        {model: Course, as: 'course', attributes: ['teacherId']},
-      ]})
-    if (!timeslotObj){
-      res.status(404).send({message: 'Timeslot with given ID does not exist'})
-    } else if (timeslotObj.course.teacherId === req.user.id){
-      res.status(400).send({message: 'Can not join your own course'})
-    } else if (timeslotObj.studentId !== null){
-      res.status(400).send({message: 'Timeslot already taken'})
-    } else {
-      timeslotObj.studentId = req.user.id
-      await timeslotObj.save()
-      res.status(200).send()
+    for (timeslotId of timeslotsArr){
+      let timeslot = await Timeslot.findByPk(timeslotId.id, {attributes: ['id', 'weekDay', 'startTime', 'studentId'],
+        include: {model: Course, as: 'course', attributes: ['teacherId']}})
+      if (!timeslot) {
+        res.status(404).send({message: `Timeslot with ID:${timeslotId.id} does not exist`})
+        return
+      } else if (timeslot.course.teacherId === req.user.id){
+        res.status(400).send({message: 'Can not join your own course'})
+        return
+      } else if (timeslot.studentId !== null){
+        res.status(400).send({message: 'Timeslot already taken'})
+        return
+      } else {
+        timeslots.push(timeslot)
+      }
     }
+    // check if timeslots overlap
+    let userTimeslots = await getTimeslots(req.user)
+    let overlappingTimeslots = getOverlappingTimeslots([...timeslots,...userTimeslots])
+    if (overlappingTimeslots.length > 0){
+      res.status(400).send({message: "Some of your timeslots overlap!",
+        overlappingTimeslots: overlappingTimeslots});
+      return
+    }
+    for (timeslot of timeslots){
+      timeslot.studentId = req.user.id
+      await timeslot.save()
+    }
+    res.status(200).send()
+  } catch (err){
+    handleError(err, res)
+  }
+})
+
+// leave timeslots through timeslot id
+router.post('/leave', extractUser, async function (req, res) {
+  const timeslotsArr = req.body["timeslots"]
+  let timeslots = []
+  if (!Array.isArray(timeslotsArr) || !timeslotsArr.length){
+    res.status(400).send({message: "Missing the timeslots array"})
+  }
+  try {
+    for (timeslotId of timeslotsArr){
+      let timeslot = await Timeslot.findByPk(timeslotId.id)
+      if (!timeslot) {
+        res.status(404).send({message: `Timeslot with ID:${timeslotId.id} does not exist`})
+        return
+      } else if (timeslot.studentId !== req.user.id){
+        res.status(403).send({message: `Timeslot with ID:${timeslotId.id} belongs to someone else!`})
+        return
+      } else {
+        timeslots.push(timeslot)
+      }
+    }
+    for (timeslot of timeslots){
+      timeslot.studentId = null
+      await timeslot.save()
+    }
+    res.status(200).send()
+  } catch (err){
+    handleError(err, res)
+  }
+})
+
+// list students
+router.get('/:courseId/students', async function (req, res) {
+  let students = []
+  try {
+    let courseObj = await Course.findByPk(req.params.courseId, {include: [
+        {model: Timeslot, attributes: ['studentId', 'weekDay', 'startTime'],
+          include: {model: User, as: "student", attributes: ['id', 'firstName', 'lastName']}
+        }
+      ]})
+    if (!courseObj) {
+        res.status(404).send({message: 'Course with given ID does not exist'})
+      }
+      for (timeslot of courseObj.timeslots){
+        if (timeslot.student){
+          students.push(timeslot.student)
+        }
+      }
+    res.status(200).send(students)
   } catch (err){
     handleError(err, res)
   }
 })
 
 //MATERIALS
-//download material
-router.get('/:courseId/materials/:materialId', async function (req, res) {
-  try{
-    let courseObj = await Course.findByPk(req.params.courseId, {include:
-        {model: CourseMaterial, as: 'materials', where: {id: req.params.materialId}, attributes: ['id', 'filePath']}})
-    if (courseObj && courseObj.materials.length > 0){
-      res.sendFile(path.join(__dirname, '..', 'media', courseObj.materials[0].filePath))
-    } else {
-      res.status(404).send({message: 'Not found'})
-    }
-  } catch (err){
-    handleError(err, res)
-  }
-})
-
 //upload material to course
-router.post('/:courseId/materials', upload.single('material'), async function (req, res) {
+router.post('/:courseId/materials', extractUser, upload.single('material'), async function (req, res) {
   try{
     let courseObj = await Course.findByPk(req.params.courseId)
-    if (courseObj){
+    if (!courseObj) {
+      res.status(404).send({message: 'Course with given ID does not exist'})
+    }
+    else if (courseObj.teacherId !== req.user.id) {
+      res.status(403).send({message: 'You are not the teacher of this course'})
+    } else {
       await CourseMaterial.create({filePath: req.file.filename, name: req.body.name, courseId: courseObj.id})
       res.status(201).send()
-    } else {
-      res.status(404).send({message: 'Course with given ID does not exist'})
     }
   } catch (err){
     handleError(err, res)
   }
 })
 // list materials for course
-router.get('/:courseId/materials', async function (req, res) {
+router.get('/:courseId/materials', extractUser, async function (req, res) {
+  let canAccess = false;
   try{
-    let courseObj = await Course.findByPk(req.params.courseId, {include:
-        {model: CourseMaterial, as: 'materials', attributes: ['id', 'name']}})
-    if (courseObj){
-      res.status(201).send(courseObj.materials)
-    } else {
+    let courseObj = await Course.findByPk(req.params.courseId, {include:[
+        {model: CourseMaterial, as: 'materials', attributes: ['id', 'name']},
+        {model: Timeslot, as: "timeslots", attributes: ['studentId', 'weekDay', 'startTime']}
+      ]})
+    if (!courseObj){
       res.status(404).send({message: 'Course with given ID does not exist'})
+      return
+    }
+    if (courseObj.teacherId === req.user.id) {canAccess = true;}
+    if (!canAccess){
+      for (timeslot of courseObj.timeslots){
+        if (timeslot.studentId === req.user.id){
+          canAccess = true
+          break;
+        }
+      }
+    }
+    if (!canAccess) {
+      res.status(403).send({message: 'You do not have access to this course'})
+    } else {
+      res.status(200).send(courseObj.materials)
     }
   } catch (err){
     handleError(err, res)
@@ -108,7 +185,7 @@ router.get('/:courseId/materials', async function (req, res) {
 //get course detail
 router.get('/:courseId', async function (req, res) {
   try{
-    let courseObj = await Course.findByPk(req.params.courseId, {include: [
+    let courseObj = await Course.findByPk(req.params.courseId, {attributes: ['id', 'name', 'description'], include: [
         {model: User, as: 'teacher', attributes: ['firstName', 'lastName']},
         {model: CourseCategory, as: 'category', attributes: ['name']},
         {model: Timeslot, attributes: ['id', 'weekDay', 'startTime'],
@@ -132,10 +209,12 @@ router.put('/:courseId', extractUser, async function (req, res) {
     if (!courseObj){
       res.status(404).send({message: 'Course with given ID does not exist'})
     } else if (courseObj.teacherId !== req.user.id) {
-      res.status(401).send({message: 'You are not the teacher of this course'})
+      res.status(403).send({message: 'You are not the teacher of this course'})
     } else {
-      await Course.build(req.body) // validate if everything in request body
+      let courseValidationObj = await Course.build(req.body) // validate if everything in request body
+      await courseValidationObj.validate()
       await courseObj.update(req.body)
+      res.status(200).send()
     }
   } catch (err){
     handleError(err, res)
@@ -149,9 +228,10 @@ router.delete('/:courseId', extractUser, async function (req, res) {
     if (!courseObj){
       res.status(404).send({message: 'Course with given ID does not exist'})
     } else if (courseObj.teacherId !== req.user.id) {
-      res.status(401).send({message: 'You are not the teacher of this course'})
+      res.status(403).send({message: 'You are not the teacher of this course'})
     } else {
       await courseObj.destroy()
+      res.status(204).send()
     }
   } catch (err){
     handleError(err, res)
@@ -160,7 +240,7 @@ router.delete('/:courseId', extractUser, async function (req, res) {
 
 // list courses
 router.get('/', async function (req, res) {
-  const options = {where:{}, order: [['name', 'ASC']], include: [
+  const options = {where:{}, order: [['name', 'ASC']], attributes: ['id', 'name', 'description'], include: [
       {model: User, as: 'teacher', attributes: ['firstName', 'lastName']},
       {model: CourseCategory, as: 'category', attributes: ['name']},
       {model: Timeslot, attributes: ['id', 'weekDay', 'startTime'],

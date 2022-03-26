@@ -1,5 +1,6 @@
 function handleError(err, res){
-  if (err.name === 'SequelizeValidationError'){
+  console.log(err)
+  if (err.name === 'SequelizeValidationError'|| err.name === 'SequelizeUniqueConstraintError'){
     const errObj = {};
     err.errors.map( er => {
       errObj[er.path] = er.message;

@@ -42,5 +42,8 @@ server.use('/student', studentRouter)
 const teacherRouter = require('./routes/teacher')
 server.use('/teacher', teacherRouter)
 
-// const timetableRouter = require('./routes/timetable')
-// server.use('/timetable', timetableRouter)
+const timetableRouter = require('./routes/timetable')
+server.use('/timetable', timetableRouter)
+
+const downloadRouter = require('./routes/materialDownload')
+server.use('/materials', downloadRouter)

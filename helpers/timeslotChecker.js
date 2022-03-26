@@ -27,7 +27,8 @@ function getOverlappingTimeslots(timeslots){
       let converted = [convertToMinutes(timeslots[i]), convertToMinutes(timeslots[j])]
       let sorted = ( converted[0] < converted[1]) ? [converted[0], converted[1]] : [converted[1], converted[0]]
       if (isOverlap(sorted[0],sorted[1])){
-        overlappingTimeslots.push([timeslots[i], timeslots[j]])
+        overlappingTimeslots.push([{weekDay:timeslots[i].weekDay, startTime: timeslots[i].startTime},
+                                   {weekDay:timeslots[j].weekDay, startTime: timeslots[j].startTime}])
       }
     }
   }

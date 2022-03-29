@@ -12,7 +12,7 @@ router.use(auth) // use auth for every route
 //get course detail
 router.get('/courses/:courseId', extractUser, async function (req, res) {
   try{
-    let courseObj = await Course.findByPk(req.params.courseId, {include: [
+    let courseObj = await Course.findByPk(req.params.courseId, {attributes: ['id', 'name', 'description'], include: [
         {model: User, as: 'teacher', attributes: ['firstName', 'lastName']},
         {model: CourseCategory, as: 'category', attributes: ['name']},
         {model: Timeslot, attributes: ['id', 'weekDay', 'startTime'],
@@ -35,7 +35,7 @@ router.get('/courses/:courseId', extractUser, async function (req, res) {
 
 // list student courses
 router.get('/courses', extractUser, async function (req, res) {
-  const options = {order: [['name', 'ASC']], include: [
+  const options = {attributes: ['id', 'name', 'description'], order: [['name', 'ASC']], include: [
       {model: User, as: 'teacher', attributes: ['firstName', 'lastName']},
       {model: CourseCategory, as: 'category', attributes: ['name']},
       {model: Timeslot, attributes: ['id', 'weekDay', 'startTime'],
@@ -43,7 +43,7 @@ router.get('/courses', extractUser, async function (req, res) {
       }
     ]}
   const courses = await Course.findAll(options)
-  // return only courses that are where user is student
+  // return only courses where user is student
   let studentCourses = courses.filter((course)=>{return course.timeslots.length > 0})
   res.status(200).send(studentCourses)
 })

@@ -39,7 +39,7 @@ router.get('/categories', async function (req, res) {
 
 // join course through timeslot id
 router.post('/join', extractUser, async function (req, res) {
-  const timeslotsArr = req.body["timeslots"]
+  const timeslotsArr = req.body
   let timeslots = []
   if (!Array.isArray(timeslotsArr) || !timeslotsArr.length){
     res.status(400).send({message: "Missing the timeslots array"})
@@ -134,7 +134,7 @@ router.get('/:courseId/students', async function (req, res) {
 
 //MATERIALS
 //upload material to course
-router.post('/:courseId/materials', extractUser, upload.single('material'), async function (req, res) {
+router.post('/:courseId/materials', extractUser, upload.single('file'), async function (req, res) {
   try{
     let courseObj = await Course.findByPk(req.params.courseId)
     if (!courseObj) {
@@ -198,6 +198,10 @@ router.delete('/:courseId/timeslots/:timeslotId', extractUser, async function (r
     let timeslotObj = await Timeslot.findByPk(req.params.timeslotId)
     if (!timeslotObj) {
       res.status(404).send({message: 'Timeslot with given ID does not exist'})
+      return
+    }
+    if (courseObj.id !== timeslotObj.courseId) {
+      res.status(403).send({message: 'Timeslot does not belong to course'})
       return
     }
     timeslotObj.destroy()

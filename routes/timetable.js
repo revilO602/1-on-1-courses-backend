@@ -12,19 +12,14 @@ router.use(auth)
 router.get('/', extractUser, async function (req, res) {
   try {
     let teacherTimeslots = []
-    let studentTimeslots = await Timeslot.findAll({where: {studentId: req.user.id},
+    let studentTimeslots = await Timeslot.findAll({attributes: ['id', 'weekDay', 'startTime'], where: {studentId: req.user.id},
       include:{model: Course, as: "course", attributes: ['name']}
     }) // student timeslots
-    for (timeslot of studentTimeslots){
-      timeslot["courseName"] = timeslot.course.name
-    }
     let teacherCourses = await Course.findAll({where:{teacherId: req.user.id},
-      include:{model: Timeslot, as: "timeslots", attributes: ['weekDay', 'startTime']}})
+      include:{model: Timeslot, as: "timeslots", attributes: ['id', 'weekDay', 'startTime'],
+        include:{model: Course, as: "course", attributes: ['name']}}})
     for (course of teacherCourses){
-      for (timeslot of course.timeslots){
-        timeslot["courseName"] = course.name
-        teacherTimeslots.push(timeslot)
-      }
+      teacherTimeslots = [...teacherTimeslots, course.timeslots]
     }
     res.status(200).send({teacherTimeslots: teacherTimeslots, studentTimeslots: studentTimeslots})
   } catch (err){

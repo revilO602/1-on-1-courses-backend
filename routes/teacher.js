@@ -6,18 +6,19 @@ const router = express.Router()
 const {auth} = require("../middleware/authorization")
 const {CourseCategory} = require("../models/CourseCategory");
 const extractUser = require("../middleware/extractUser");
+const handleError = require("../helpers/errorHandler");
 
 router.use(auth) // use auth for every route
 
 //get course detail
 router.get('/courses/:courseId', extractUser, async function (req, res) {
   try {
-    let courseObj = await Course.findByPk(req.params.courseId, {
+    let courseObj = await Course.findByPk(req.params.courseId, {attributes: ['id', 'name', 'description', 'teacherId'],
       include: [
         {model: User, as: 'teacher', attributes: ['firstName', 'lastName']},
         {model: CourseCategory, as: 'category', attributes: ['name']},
         {
-          model: Timeslot, attributes: ['id', 'weekDay', 'startTime'],
+          model: Timeslot, attributes: ['id', 'weekDay', 'startTime', 'studentId'],
           include: {model: User, as: 'student', attributes: ['firstName', 'lastName']}
         }
       ]
@@ -29,18 +30,15 @@ router.get('/courses/:courseId', extractUser, async function (req, res) {
     } else {
       res.status(200).send(courseObj)
     }
-  } catch (e){
-    res.status(400).send({
-      message:
-        e.message || "Some error occurred while creating course."
-    });
+  } catch (err){
+    handleError(err, res)
   }
 })
 
 // list teacher courses
 router.get('/courses', extractUser, async function (req, res) {
-  const options = {where: {teacherId: req.user.id}, order: [['name', 'ASC']], include: [
-      {model: User, as: 'teacher', attributes: ['firstName', 'lastName']},
+  const options = {attributes: ['id', 'name', 'description'], where: {teacherId: req.user.id}, order: [['name', 'ASC']], include: [
+      {model: User, as: 'teacher', attributes: ['id', 'firstName', 'lastName']},
       {model: CourseCategory, as: 'category', attributes: ['name']},
     ]}
   const courses = await Course.findAll(options)

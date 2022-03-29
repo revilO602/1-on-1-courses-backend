@@ -181,6 +181,62 @@ router.get('/:courseId/materials', extractUser, async function (req, res) {
   }
 })
 
+//TIMESLOTS
+
+// delete timeslot from course
+router.delete('/:courseId/timeslots/:timeslotId', extractUser, async function (req, res) {
+  try {
+    let courseObj = await Course.findByPk(req.params.courseId)
+    if (!courseObj) {
+      res.status(404).send({message: 'Course with given ID does not exist'})
+      return
+    }
+    if (courseObj.teacherId !== req.user.id) {
+      res.status(403).send({message: 'You are not the teacher of this course'})
+      return
+    }
+    let timeslotObj = await Timeslot.findByPk(req.params.timeslotId)
+    if (!timeslotObj) {
+      res.status(404).send({message: 'Timeslot with given ID does not exist'})
+      return
+    }
+    timeslotObj.destroy()
+    res.status(204).send()
+  } catch (err){
+    handleError(err, res)
+  }
+})
+
+// add timeslot to course
+router.post('/:courseId/timeslots', extractUser, async function (req, res) {
+  let userTimeslots = await getTimeslots(req.user)
+  try {
+    let courseObj = await Course.findByPk(req.params.courseId)
+    if (!courseObj) {
+      res.status(404).send({message: 'Course with given ID does not exist'})
+      return
+    }
+    if (courseObj.teacherId !== req.user.id) {
+      res.status(403).send({message: 'You are not the teacher of this course'})
+      return
+    }
+    let timeslotObj = await Timeslot.build(req.body)
+    await timeslotObj.validate()
+    // check if timeslots overlap
+    let overlappingTimeslots = getOverlappingTimeslots([timeslotObj,...userTimeslots])
+    if (overlappingTimeslots.length > 0){
+      res.status(400).send({message: "Some of your timeslots overlap!",
+        overlappingTimeslots: overlappingTimeslots});
+      return
+    }
+    timeslotObj.courseId = courseObj.id
+    await timeslotObj.save()
+    res.status(201).send()
+  } catch (err){
+    handleError(err, res)
+  }
+})
+
 //COURSES
 //get course detail
 router.get('/:courseId', async function (req, res) {
@@ -205,7 +261,9 @@ router.get('/:courseId', async function (req, res) {
 // update course
 router.put('/:courseId', extractUser, async function (req, res) {
   try{
-    let courseObj = await Course.findByPk(req.params.courseId)
+    let courseObj = await Course.findByPk(req.params.courseId, {include: [
+        {model: Timeslot, attributes: ['id', 'weekDay', 'startTime']}
+      ]})
     if (!courseObj){
       res.status(404).send({message: 'Course with given ID does not exist'})
     } else if (courseObj.teacherId !== req.user.id) {

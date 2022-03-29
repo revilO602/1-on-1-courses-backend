@@ -9,7 +9,7 @@ const router = express.Router()
 router.use(auth)
 
 // list categories
-router.get('/timetable', extractUser, async function (req, res) {
+router.get('/', extractUser, async function (req, res) {
   try {
     let teacherTimeslots = []
     let studentTimeslots = await Timeslot.findAll({where: {studentId: req.user.id},

@@ -211,7 +211,7 @@ router.put('/:courseId', extractUser, async function (req, res) {
     } else if (courseObj.teacherId !== req.user.id) {
       res.status(403).send({message: 'You are not the teacher of this course'})
     } else {
-      let courseValidationObj = await Course.build(req.body) // validate if everything in request body
+      let courseValidationObj = await Course.build({...req.body, teacherId: req.user.id}) // validate if everything in request body
       await courseValidationObj.validate()
       await courseObj.update(req.body)
       res.status(200).send()

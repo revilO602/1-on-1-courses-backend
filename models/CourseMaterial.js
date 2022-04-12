@@ -24,6 +24,7 @@ CourseMaterial.belongsTo(Course, {
 })
 Course.hasMany(CourseMaterial, {
   as: 'materials',
+  onDelete: 'CASCADE',
   foreignKey: {
     name: 'courseId',
     allowNull: false

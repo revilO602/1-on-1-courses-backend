@@ -16,7 +16,7 @@ router.get('/courses/:courseId', extractUser, async function (req, res) {
     let courseObj = await Course.findByPk(req.params.courseId, {attributes: ['id', 'name', 'description', 'teacherId'],
       include: [
         {model: User, as: 'teacher', attributes: ['firstName', 'lastName']},
-        {model: CourseCategory, as: 'category', attributes: ['name']},
+        {model: CourseCategory, as: 'category', attributes: ['name', 'id']},
         {
           model: Timeslot, attributes: ['id', 'weekDay', 'startTime', 'studentId'],
           include: {model: User, as: 'student', attributes: ['firstName', 'lastName']}

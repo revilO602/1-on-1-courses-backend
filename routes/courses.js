@@ -234,8 +234,8 @@ router.post('/:courseId/timeslots', extractUser, async function (req, res) {
       return
     }
     timeslotObj.courseId = courseObj.id
-    await timeslotObj.save()
-    res.status(201).send()
+    let timeslot = await timeslotObj.save()
+    res.status(200).send(timeslot)
   } catch (err){
     handleError(err, res)
   }
@@ -276,7 +276,7 @@ router.put('/:courseId', extractUser, async function (req, res) {
       let courseValidationObj = await Course.build({...req.body, teacherId: req.user.id}) // validate if everything in request body
       await courseValidationObj.validate()
       await courseObj.update(req.body)
-      res.status(200).send()
+      res.status(204).send()
     }
   } catch (err){
     handleError(err, res)
@@ -335,6 +335,7 @@ router.post('/', extractUser, async function (req, res) {
       await timeslotObj.validate()
       buildTimeslots.push(timeslotObj)
     }
+    console.log('oh god why')
     // check if timeslots overlap
     let overlappingTimeslots = getOverlappingTimeslots([...buildTimeslots,...userTimeslots])
     if (overlappingTimeslots.length > 0){

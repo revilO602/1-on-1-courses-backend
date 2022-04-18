@@ -17,6 +17,7 @@ const CourseMaterial = db.define('course_material', {
 
 CourseMaterial.belongsTo(Course, {
   as: 'course',
+  onDelete: 'CASCADE',
   foreignKey: {
     name: 'courseId',
     allowNull: false

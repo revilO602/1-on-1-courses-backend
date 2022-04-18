@@ -103,7 +103,7 @@ router.post('/leave', extractUser, async function (req, res) {
       timeslot.studentId = null
       await timeslot.save()
     }
-    res.status(200).send()
+    res.status(204).send()
   } catch (err){
     handleError(err, res)
   }
@@ -155,7 +155,7 @@ router.get('/:courseId/materials', extractUser, async function (req, res) {
   let canAccess = false;
   try{
     let courseObj = await Course.findByPk(req.params.courseId, {include:[
-        {model: CourseMaterial, as: 'materials', attributes: ['id', 'name']},
+        {model: CourseMaterial, as: 'materials', attributes: ['id', 'name', "filePath"]},
         {model: Timeslot, as: "timeslots", attributes: ['studentId', 'weekDay', 'startTime']}
       ]})
     if (!courseObj){

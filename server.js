@@ -13,6 +13,7 @@ const port = 3000;
 // MIDDLEWARE
 server.use(express.json()); // json parser
 server.use(express.urlencoded({ extended: false })); // URL parser
+server.use('/media', express.static('media'))
 
 const networkInterfaces = os.networkInterfaces();
 

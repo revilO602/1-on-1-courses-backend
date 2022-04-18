@@ -4,6 +4,7 @@ const {auth} = require("../middleware/authorization")
 const extractUser = require("../middleware/extractUser");
 const handleError = require("../helpers/errorHandler");
 const {Course} = require("../models/Course");
+const {User} = require("../models/User");
 
 const router = express.Router()
 router.use(auth)
@@ -17,9 +18,10 @@ router.get('/', extractUser, async function (req, res) {
     }) // student timeslots
     let teacherCourses = await Course.findAll({where:{teacherId: req.user.id},
       include:{model: Timeslot, as: "timeslots", attributes: ['id', 'weekDay', 'startTime'],
-        include:{model: Course, as: "course", attributes: ['name']}}})
+        include:[{model: Course, as: "course", attributes: ['name']},
+                 {model: User, as: 'student', attributes: ['firstName', 'lastName']}]}})
     for (course of teacherCourses){
-      teacherTimeslots = [...teacherTimeslots, course.timeslots]
+      teacherTimeslots = [...teacherTimeslots, ...course.timeslots]
     }
     res.status(200).send({teacherTimeslots: teacherTimeslots, studentTimeslots: studentTimeslots})
   } catch (err){

@@ -120,10 +120,12 @@ router.get('/:courseId/students', extractUser, async function (req, res) {
         {model: User, as: "teacher", attributes: ['id']}
       ]})
     if (!courseObj) {
-        res.status(404).send({message: 'Course with given ID does not exist'})
+      res.status(404).send({message: 'Course with given ID does not exist'})
+      return
       }
     if (courseObj.teacher.id !== req.user.id) {
       res.status(403).send({message: 'You are not the teacher of this course'})
+      return
     }
     for (timeslot of courseObj.timeslots){
       if (timeslot.student){

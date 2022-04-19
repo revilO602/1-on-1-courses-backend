@@ -16,8 +16,8 @@ const Course = db.define('course', {
   },
 }, {underscored: true})
 
-Course.hasMany(Timeslot)
-Timeslot.belongsTo(Course, {onDelete: 'CASCADE'})
+Course.hasMany(Timeslot, {onDelete: 'CASCADE'})
+Timeslot.belongsTo(Course)
 
 Course.belongsTo(User, {
   as: 'teacher',

@@ -117,12 +117,12 @@ router.get('/:courseId/students', extractUser, async function (req, res) {
         {model: Timeslot, attributes: ['studentId', 'weekDay', 'startTime'],
           include: {model: User, as: "student", attributes: ['id', 'firstName', 'lastName']}
         },
-        {model: User, as: "teacher", attributes: ['teacherId']}
+        {model: User, as: "teacher", attributes: ['id']}
       ]})
     if (!courseObj) {
         res.status(404).send({message: 'Course with given ID does not exist'})
       }
-    if (courseObj.teacher.teacherId !== req.user.id) {
+    if (courseObj.teacher.id !== req.user.id) {
       res.status(403).send({message: 'You are not the teacher of this course'})
     }
     for (timeslot of courseObj.timeslots){

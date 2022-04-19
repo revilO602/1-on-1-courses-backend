@@ -18,7 +18,7 @@ server.use('/media', express.static('media'))
 const networkInterfaces = os.networkInterfaces();
 
 testDb();
-createTables() // resets db and seeds dummy data
+//createTables() // resets db and seeds dummy data
 
 // start server
 server.listen(port, () => {

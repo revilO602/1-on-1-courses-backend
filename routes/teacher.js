@@ -39,7 +39,7 @@ router.get('/courses/:courseId', extractUser, async function (req, res) {
 router.get('/courses', extractUser, async function (req, res) {
   const options = {attributes: ['id', 'name', 'description'], where: {teacherId: req.user.id}, order: [['name', 'ASC']], include: [
       {model: User, as: 'teacher', attributes: ['id', 'firstName', 'lastName']},
-      {model: CourseCategory, as: 'category', attributes: ['name']},
+      {model: CourseCategory, as: 'category', attributes: ['id', 'name']},
     ]}
   const courses = await Course.findAll(options)
   res.status(200).send(courses)

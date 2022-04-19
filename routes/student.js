@@ -14,7 +14,7 @@ router.get('/courses/:courseId', extractUser, async function (req, res) {
   try{
     let courseObj = await Course.findByPk(req.params.courseId, {attributes: ['id', 'name', 'description'], include: [
         {model: User, as: 'teacher', attributes: ['firstName', 'lastName']},
-        {model: CourseCategory, as: 'category', attributes: ['name']},
+        {model: CourseCategory, as: 'category', attributes: ['id', 'name']},
         {model: Timeslot, attributes: ['id', 'weekDay', 'startTime'],
           where: { studentId: req.user.id} // return only student timeslots
         }
@@ -37,7 +37,7 @@ router.get('/courses/:courseId', extractUser, async function (req, res) {
 router.get('/courses', extractUser, async function (req, res) {
   const options = {attributes: ['id', 'name', 'description'], order: [['name', 'ASC']], include: [
       {model: User, as: 'teacher', attributes: ['firstName', 'lastName']},
-      {model: CourseCategory, as: 'category', attributes: ['name']},
+      {model: CourseCategory, as: 'category', attributes: ['id', 'name']},
       {model: Timeslot, attributes: ['id', 'weekDay', 'startTime'],
         where: { studentId: req.user.id}
       }

@@ -81,7 +81,7 @@ router.post('/join', extractUser, async function (req, res) {
 
 // leave timeslots through timeslot id
 router.post('/leave', extractUser, async function (req, res) {
-  const timeslotsArr = req.body["timeslots"]
+  const timeslotsArr = req.body
   let timeslots = []
   if (!Array.isArray(timeslotsArr) || !timeslotsArr.length){
     res.status(400).send({message: "Missing the timeslots array"})
@@ -110,22 +110,26 @@ router.post('/leave', extractUser, async function (req, res) {
 })
 
 // list students
-router.get('/:courseId/students', async function (req, res) {
+router.get('/:courseId/students', extractUser, async function (req, res) {
   let students = []
   try {
     let courseObj = await Course.findByPk(req.params.courseId, {include: [
         {model: Timeslot, attributes: ['studentId', 'weekDay', 'startTime'],
           include: {model: User, as: "student", attributes: ['id', 'firstName', 'lastName']}
-        }
+        },
+        {model: User, as: "teacher", attributes: ['teacherId']}
       ]})
     if (!courseObj) {
         res.status(404).send({message: 'Course with given ID does not exist'})
       }
-      for (timeslot of courseObj.timeslots){
-        if (timeslot.student){
-          students.push(timeslot.student)
-        }
+    if (courseObj.teacher.teacherId !== req.user.id) {
+      res.status(403).send({message: 'You are not the teacher of this course'})
+    }
+    for (timeslot of courseObj.timeslots){
+      if (timeslot.student){
+        students.push(timeslot.student)
       }
+    }
     res.status(200).send(students)
   } catch (err){
     handleError(err, res)
@@ -235,7 +239,7 @@ router.post('/:courseId/timeslots', extractUser, async function (req, res) {
     }
     timeslotObj.courseId = courseObj.id
     let timeslot = await timeslotObj.save()
-    res.status(200).send(timeslot)
+    res.status(201).send({id: timeslot.id})
   } catch (err){
     handleError(err, res)
   }
@@ -247,7 +251,7 @@ router.get('/:courseId', async function (req, res) {
   try{
     let courseObj = await Course.findByPk(req.params.courseId, {attributes: ['id', 'name', 'description'], include: [
         {model: User, as: 'teacher', attributes: ['firstName', 'lastName']},
-        {model: CourseCategory, as: 'category', attributes: ['name']},
+        {model: CourseCategory, as: 'category', attributes: ['id','name']},
         {model: Timeslot, attributes: ['id', 'weekDay', 'startTime'],
           where: { studentId: {[Op.is]: null }} // return only free timeslots
         }

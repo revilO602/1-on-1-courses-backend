@@ -23,11 +23,11 @@ createTables() // resets db and seeds dummy data
 // start server
 server.listen(port, () => {
   // if not on Wi-Fi this would throw an error - but on wifi it tells the outwards facing IP of the server
-  // commented out by default to avoid errors
-
-  let ipAddress = networkInterfaces['Wi-Fi'].find(con => con.family === 'IPv4')['address'];
-  console.log(`Server running at http://${ipAddress}:${port}`);
-  console.log(`Server running`);
+  let wifiInterface = networkInterfaces['Wi-Fi']
+  if(wifiInterface) {
+    let ipAddress = wifiInterface.find(con => con.family === 'IPv4')['address'];
+    console.log(`Server running at http://${ipAddress}:${port}`);
+  } else console.log(`Server running`);
 });
 
 server.get('/', function (req, res) {

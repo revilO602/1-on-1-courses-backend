@@ -21,7 +21,7 @@ router.post('/register', async function (req, res) {
 // user can check if his credentials are correct
 // this will return 401 if wrong credentials in auth header
 // used when the mobile app wants to save credentials or throw login error
-router.post('/login', auth, extractUser, function (req, res) {
+router.get('/login', auth, extractUser, function (req, res) {
   res.status(200).send({id: req.user.id})
 })
 

@@ -1,3 +1,4 @@
+# 1-on-1 Courses
 ## Opis
 
 Táto mobilná aplikácia umožňuje používateľom vytvárať kurzy s hodinovými “one on one” lekciami, ktoré sa opakujú každý týždeň v rovnakom čase. Následne sa iný používatelia môžu prihlásiť na voľný časový blok (timeslot). Používateľ si potom môže zobraziť svoj rozvrh. Súčasťou aplikácie sú “one on one” lekcie formou videohovorov medzi učiteľom a študentom.
